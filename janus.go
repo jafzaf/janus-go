@@ -160,7 +160,6 @@ func (session *Session) KeepAliveSender(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			fmt.Printf("-> keepalive on session %v\n",session.ID)
 			_, err := session.KeepAlive(ctx)
 			if err != nil {
 				return err
