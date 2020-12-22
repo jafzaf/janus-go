@@ -2,12 +2,17 @@
 
 A Go language Websocket based package for controlling the Janus WebRTC gateway
 
-## TL;DR
+## Vision
 
-The main thrust of this package is to improve on reliability, stability, and trustworthiness of the original repository.
+I would like this library to be come:
+- trusted
+- stable
+- reliable
+
+For the purposes of controlling Janus in production environments.
   
-Please join me by providing feedback and Pull Requests
-
+Please join me by providing feedback and Pull Requests,
+praise, constructive criticism, whatever you like.
 
 
 ## Prinicpals guiding the effort to make this super trustworthy and stable
