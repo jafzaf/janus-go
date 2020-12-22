@@ -153,7 +153,9 @@ func (gateway *Gateway) ping(ctx context.Context) error {
 }
 
 func (session *Session) KeepAliveSender(ctx context.Context) error {
-	ticker := time.NewTicker(time.Second * 5)
+	// regarding ticker, you need to ping janus at least every 60 seconds
+	// https://janus.conf.meetecho.com/docs/rest.html#WS
+	ticker := time.NewTicker(time.Second * 20)
 	defer ticker.Stop()
 	for {
 		select {
