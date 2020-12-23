@@ -18,11 +18,7 @@ import (
 
 // The message types are defined in RFC 6455, section 11.8.
 const (
-	TextMessage   = 1
-	BinaryMessage = 2
-	CloseMessage  = 8
-	PingMessage   = 9
-	PongMessage   = 10
+	pingMessage   = 9
 )
 
 var debug = false
