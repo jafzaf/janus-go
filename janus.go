@@ -18,7 +18,7 @@ import (
 
 // The message types are defined in RFC 6455, section 11.8.
 const (
-	pingMessage   = 9
+	pingMessage = 9
 )
 
 var debug = false
@@ -51,13 +51,24 @@ func generateTransactionId() xid.ID {
 	return xid.New()
 }
 
-// Connect initiates a webscoket connection with the Janus Gateway
-func Connect(ctx context.Context, wsURL string) (*Gateway, error) {
+// Connect initiates a websock connection with the Janus Gateway
+//
+// It will also spawn two goroutines to maintain the connection
+// One is for sending Websocket ping messages periodically
+// The other is for reading messages and passing to the right channel
+//
+// These two goroutines are added to an errgroup.Group
+// which you can ignore if you like: gateway, _, err := janus.Connect
+// or even better you can use the Wait() method to wait for these
+// methods, AND CATCH ANY ERRORS THAT OCCUR inside of them.
+// The readme has links to more info on errgroup.
+//
+func Connect(ctx context.Context, wsURL string) (*Gateway, *errgroup.Group, error) {
 
 	opts := &websocket.DialOptions{Subprotocols: []string{"janus-protocol"}}
 	conn, _, err := websocket.Dial(ctx, wsURL, opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	gateway := new(Gateway)
@@ -66,26 +77,27 @@ func Connect(ctx context.Context, wsURL string) (*Gateway, error) {
 	gateway.transactionsUsed = make(map[xid.ID]bool)
 	gateway.Sessions = make(map[uint64]*Session)
 
-	// we now expect these to be started by our caller
-
-	//yeah this is ugly
-	//
-	// The derived Context is canceled the first time a function passed to Go returns
-	// a non-nil error or the first time Wait returns, whichever occurs first.
+	// By returning errgroup.Group callers can wait for
+	// any errors that occur in these goroutines. Powerful.
+	// by simplying calling Wait() on the group.
+	// also, if either of these goroutines return an error,
+	// the other one will be cancelled.
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error { return gateway.ping(ctx) })
 	g.Go(func() error { return gateway.recv(ctx) })
 
-	go func() {
-		err := g.Wait() //finish when
-		if err != nil {
-			println(fmt.Sprintf("janus-session ended with error %v", err)) //stderr
-		}
-	}()
+	return gateway, g, nil
+}
 
-	return gateway, nil
-
+// WaitForGroup is an example of
+// wait and catch errors from the Connect() function
+func WaitForGroup(g *errgroup.Group) error {
+	err := g.Wait() //finish when
+	if err != nil {
+		println(fmt.Sprintf("janus-session ended with error %v", err)) //stderr
+	}
+	return err
 }
 
 // Close closes the underlying connection to the Gateway.
