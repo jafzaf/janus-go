@@ -138,7 +138,7 @@ func (gateway *Gateway) ping(ctx context.Context) error {
 			return ctx.Err()
 		case <-ticker.C:
 			//fmt.Println("wsping on websock")
-			err := gateway.conn.Write(ctx, PingMessage, []byte{})
+			err := gateway.conn.Write(ctx, pingMessage, []byte{})
 			if err != nil {
 				return err
 			}
