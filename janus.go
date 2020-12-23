@@ -287,12 +287,16 @@ func (gateway *Gateway) Info(ctx context.Context) (*InfoMsg, error) {
 		return nil, err
 	}
 
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *InfoMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *InfoMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("info")
@@ -402,12 +406,16 @@ func (session *Session) KeepAlive(ctx context.Context) (*AckMsg, error) {
 		return nil, err
 	}
 
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("keepalive")
@@ -423,14 +431,17 @@ func (session *Session) Destroy(ctx context.Context) (*AckMsg, error) {
 		return nil, err
 	}
 
-	/// XXX check for ctx.Done
 	var ack *AckMsg
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		ack = msg
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			ack = msg
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	// Remove this session from the gateway
@@ -477,13 +488,16 @@ func (handle *Handle) Request(ctx context.Context, body interface{}) (*SuccessMs
 		return nil, err
 	}
 
-	msg := <-ch
-
-	switch msg := msg.(type) {
-	case *SuccessMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *SuccessMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("message")
@@ -507,14 +521,19 @@ func (handle *Handle) Message(ctx context.Context, body, jsep interface{}) (*Eve
 	}
 
 GetMessage: // No tears..
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		goto GetMessage // ..only dreams.
-	case *EventMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			goto GetMessage // ..only dreams.
+		case *EventMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("message")
@@ -536,12 +555,16 @@ func (handle *Handle) Trickle(ctx context.Context, candidate interface{}) (*AckM
 		return nil, err
 	}
 
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("trickle")
@@ -559,12 +582,16 @@ func (handle *Handle) TrickleMany(ctx context.Context, candidates interface{}) (
 		return nil, err
 	}
 
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		return msg, nil
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			return msg, nil
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	return nil, unexpected("trickle")
@@ -580,12 +607,16 @@ func (handle *Handle) Detach(ctx context.Context) (*AckMsg, error) {
 	}
 
 	var ack *AckMsg
-	msg := <-ch
-	switch msg := msg.(type) {
-	case *AckMsg:
-		ack = msg
-	case *ErrorMsg:
-		return nil, msg
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case msg := <-ch:
+		switch msg := msg.(type) {
+		case *AckMsg:
+			ack = msg
+		case *ErrorMsg:
+			return nil, msg
+		}
 	}
 
 	// Remove this handle from the session
