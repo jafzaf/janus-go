@@ -213,7 +213,9 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 		msg := typeFunc()
 		if err := json.Unmarshal(data, &msg); err != nil {
 			fmt.Printf("json.Unmarshal: %s\n", err)
-			continue // Decode error
+			// 122220 change from continue to return err
+			// if this happens, it probably means we have a serious error
+			return err
 		}
 
 		var transactionUsed bool
