@@ -45,9 +45,6 @@ type Gateway struct {
 	conn             *websocket.Conn
 	transactions     map[xid.ID]chan interface{}
 	transactionsUsed map[xid.ID]bool
-	errors           chan error
-	sendChan         chan []byte
-	writeMu          sync.Mutex
 }
 
 func generateTransactionId() xid.ID {
