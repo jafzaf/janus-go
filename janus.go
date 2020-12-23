@@ -21,7 +21,6 @@ const (
 	pingMessage = 9
 )
 
-var debug = false
 
 func unexpected(request string) error {
 	return fmt.Errorf("Unexpected response received to '%s' request", request)
@@ -45,6 +44,9 @@ type Gateway struct {
 	conn             *websocket.Conn
 	transactions     map[xid.ID]chan interface{}
 	transactionsUsed map[xid.ID]bool
+
+	// LogJsonMessages enables logging of json rx/tx messages to stdout
+	LogJsonMessages	bool
 }
 
 func generateTransactionId() xid.ID {
@@ -120,7 +122,7 @@ func (gateway *Gateway) send(ctx context.Context, msg map[string]interface{}, tr
 		return err
 	}
 
-	if debug {
+	if gateway.LogJsonMessages {
 		// log message being sent
 		var log bytes.Buffer
 		_ = json.Indent(&log, data, ">", "   ")
@@ -196,7 +198,7 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 			return err
 		}
 
-		if debug {
+		if gateway.LogJsonMessages {
 			// log message being sent
 			var log bytes.Buffer
 			_ = json.Indent(&log, data, "<", "   ")
