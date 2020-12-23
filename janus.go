@@ -207,6 +207,9 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 		typeFunc, ok := msgtypes[base.Type]
 		if !ok {
 			fmt.Printf("Unknown message type received!\n")
+			// 122220 use continue, not return error.
+			// hopefully best trade-off between fail-early
+			// robust run-time behavior
 			continue
 		}
 
@@ -224,7 +227,6 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 			gateway.Lock()
 			transactionUsed = gateway.transactionsUsed[id]
 			gateway.Unlock()
-
 		}
 
 		// Pass message on from here
@@ -239,6 +241,7 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 				gateway.Unlock()
 				if session == nil {
 					fmt.Printf("Unable to deliver message. Session gone?\n")
+					// 122220 leave as continue, not return err
 					continue
 				}
 
@@ -248,6 +251,7 @@ func (gateway *Gateway) recv(ctx context.Context) error {
 				session.Unlock()
 				if handle == nil {
 					fmt.Printf("Unable to deliver message. Handle gone?\n")
+					// 122220 leave as continue, not return err
 					continue
 				}
 
