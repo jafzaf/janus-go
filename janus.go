@@ -10,9 +10,10 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 	"nhooyr.io/websocket"
-	"github.com/rs/xid"
 )
 
 // The message types are defined in RFC 6455, section 11.8.
