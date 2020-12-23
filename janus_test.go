@@ -14,7 +14,7 @@ func Test_Connect(t *testing.T) {
 
 
 	
-	client, err := Connect(ctx,"ws://localhost:8188/")
+	client, _, err := Connect(ctx,"ws://localhost:8188/")
 	if err != nil {
 		t.Fail()
 		return
