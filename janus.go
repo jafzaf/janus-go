@@ -158,6 +158,8 @@ func (gateway *Gateway) ping(ctx context.Context) error {
 	}
 }
 
+// KeepAliveSender will send keepalive messages every 20 seconds
+// for the session
 func (session *Session) KeepAliveSender(ctx context.Context) error {
 	// regarding ticker, you need to ping janus at least every 60 seconds
 	// https://janus.conf.meetecho.com/docs/rest.html#WS
