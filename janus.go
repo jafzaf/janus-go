@@ -18,9 +18,9 @@ import (
 
 // The message types are defined in RFC 6455, section 11.8.
 const (
-	pingMessage = 9
+	pingMessage     = 9
+	timeoutDuration = 1 * time.Second
 )
-
 
 func unexpected(request string) error {
 	return fmt.Errorf("Unexpected response received to '%s' request", request)
@@ -46,7 +46,7 @@ type Gateway struct {
 	transactionsUsed map[xid.ID]bool
 
 	// LogJsonMessages enables logging of json rx/tx messages to stdout
-	LogJsonMessages	bool
+	LogJsonMessages bool
 }
 
 func generateTransactionId() xid.ID {
@@ -107,7 +107,6 @@ func (gateway *Gateway) Close(code websocket.StatusCode, reason string) error {
 	return gateway.conn.Close(code, reason)
 }
 
-
 func (gateway *Gateway) send(ctx context.Context, msg map[string]interface{}, transaction chan interface{}) error {
 	guid := generateTransactionId()
 
@@ -136,7 +135,11 @@ func (gateway *Gateway) send(ctx context.Context, msg map[string]interface{}, tr
 }
 
 func passMsg(ch chan interface{}, msg interface{}) {
-	ch <- msg
+	select {
+	case ch <- msg:
+	case <-time.After(timeoutDuration):
+		println("no reader/discarded %#v", msg)
+	}
 }
 
 // ping should be started as a goroutine,
@@ -290,6 +293,8 @@ func (gateway *Gateway) Info(ctx context.Context) (*InfoMsg, error) {
 	}
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'info'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -315,6 +320,8 @@ func (gateway *Gateway) Create(ctx context.Context) (*Session, error) {
 
 	var success *SuccessMsg
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'create'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -376,6 +383,8 @@ func (session *Session) Attach(ctx context.Context, plugin string) (*Handle, err
 
 	var success *SuccessMsg
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'attach'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -409,6 +418,8 @@ func (session *Session) KeepAlive(ctx context.Context) (*AckMsg, error) {
 	}
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'keepalive'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -435,6 +446,8 @@ func (session *Session) Destroy(ctx context.Context) (*AckMsg, error) {
 
 	var ack *AckMsg
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'destroy'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -491,6 +504,8 @@ func (handle *Handle) Request(ctx context.Context, body interface{}) (*SuccessMs
 	}
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'message'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -525,6 +540,8 @@ func (handle *Handle) Message(ctx context.Context, body, jsep interface{}) (*Eve
 GetMessage: // No tears..
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'message'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -558,6 +575,8 @@ func (handle *Handle) Trickle(ctx context.Context, candidate interface{}) (*AckM
 	}
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'trickle'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -585,6 +604,8 @@ func (handle *Handle) TrickleMany(ctx context.Context, candidates interface{}) (
 	}
 
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'trickle'/many")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
@@ -610,6 +631,8 @@ func (handle *Handle) Detach(ctx context.Context) (*AckMsg, error) {
 
 	var ack *AckMsg
 	select {
+	case <-time.After(timeoutDuration):
+		return nil,fmt.Errorf("timeout waiting for response to 'detach'")
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case msg := <-ch:
