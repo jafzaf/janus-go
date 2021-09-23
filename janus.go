@@ -44,6 +44,7 @@ type Gateway struct {
 	conn             *websocket.Conn
 	transactions     map[xid.ID]chan interface{}
 	transactionsUsed map[xid.ID]bool
+	apiSecret	 string
 
 	// LogJsonMessages enables logging of json rx/tx messages to stdout
 	LogJsonMessages bool
@@ -65,7 +66,7 @@ func generateTransactionId() xid.ID {
 // methods, AND CATCH ANY ERRORS THAT OCCUR inside of them.
 // The readme has links to more info on errgroup.
 //
-func Connect(ctx context.Context, wsURL string) (*Gateway, *errgroup.Group, error) {
+func Connect(ctx context.Context, wsURL string, secret string) (*Gateway, *errgroup.Group, error) {
 
 	opts := &websocket.DialOptions{Subprotocols: []string{"janus-protocol"}}
 	conn, _, err := websocket.Dial(ctx, wsURL, opts)
@@ -78,6 +79,7 @@ func Connect(ctx context.Context, wsURL string) (*Gateway, *errgroup.Group, erro
 	gateway.transactions = make(map[xid.ID]chan interface{})
 	gateway.transactionsUsed = make(map[xid.ID]bool)
 	gateway.Sessions = make(map[uint64]*Session)
+	gateway.apiSecret = secret
 
 	// By returning errgroup.Group callers can wait for
 	// any errors that occur in these goroutines. Powerful.
@@ -111,6 +113,9 @@ func (gateway *Gateway) send(ctx context.Context, msg map[string]interface{}, tr
 	guid := generateTransactionId()
 
 	msg["transaction"] = guid.String()
+	if gateway.apiSecret != "" {
+		msg["apisecret"] = gateway.apiSecret
+	}
 	gateway.Lock()
 	gateway.transactions[guid] = transaction
 	gateway.transactionsUsed[guid] = false
